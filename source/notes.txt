@@ -1,0 +1,69 @@
+
+
+local function nodeInHistory(history, nodetitle)
+    -- scan the history table for the node title
+    for i = 1 , #history do
+        if history[i] == nodetitle then
+            return true
+        end
+    end
+    return false
+end
+
+local function findEmptyBranch(tr)
+    -- returns nil if tree is empty
+    -- returns a node if it finds an empty node
+    -- returns 1 if the tree is complete (no empty branches)
+
+    thisnode = {}
+    thisnode = tr.root
+    table.insert(treejourney, thisnode)
+
+    local abort = false
+    repeat until abort == true
+        if #thisnode.children < 2 then
+            -- this node is a branch and has too few children. Bingo.
+            abort = true
+            return thisnode
+        else
+            -- thisnode is a branch and has at least 2 children
+            if not nodeInHistory(treejourney, thisnode.children[1]) then
+                thisnode = thisnode.children[1]
+
+                add thisnode title + 0 or 1
+
+            elseif not nodeInHistory(treejourney, thisnode.children[2]) then
+                thisnode = thisnode.children[2]
+            else
+                -- both children are in history so travel up the tree or
+                -- this node is a leaf
+                thisnode = treejourney[#treejourney - 1]
+                if thisnode == root and both children in history then
+                    abort = true
+                end
+            end
+        end
+    end
+    return 1      -- effectively a 'fail'
+end
+
+
+
+solutiontree = {}
+treejourney = {}
+Get data
+emptynode = {}
+emptynode = findEmptyBranch(tr)
+while emptynode ~= nil do
+
+    Construct dataset based on journey to branch
+
+    for each feature in dataset (n-1)
+        get gain for feature
+    end
+
+    add best gain to branch
+
+    if entropy = 1 then mark this as leaf end
+
+end

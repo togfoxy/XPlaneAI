@@ -3,10 +3,31 @@ tr = require 'tree'
 cf = require 'lib.commonfunctions'
 
 dataset = {}
+rawdata = {}
+cleandata = {}
+solutiontree = {}
+emptynode = {}
+treejourney = {}
+treejourneypointer = 0      -- this points to where in the treejourney the current navigation is. Treejourney is a flat array so this is between 1 and #treejourney inclusive
 
 NUMBEROFDATAPOINTS = 50
 
-NUMBEROFFUNCTIONS = 3
+local function getDataset1()
+    for i = 1, 2 do
+        dataset[1] = {}
+        dataset[2] = {}
+
+        dataset[1][1] = 0       -- agl
+        dataset[1][2] = 0       -- pitch
+        dataset[1][3] = 0       -- airspeed
+        dataset[1][4] = 0       -- gear
+
+        dataset[2][1] = 1       -- agl
+        dataset[2][2] = 1       -- pitch
+        dataset[2][3] = 1       -- airspeed
+        dataset[1][4] = 1       -- gear
+    end
+end
 
 local function getDataset()
     -- sets the global variable dataset to random values
@@ -15,254 +36,275 @@ local function getDataset()
         dataset[i] = {}
 
         -- AGL
-        dataset[i][1] = love.math.random(0,9)
+        dataset[i][1] = love.math.random(1,2) - 1
 
         -- pitch
         if dataset[i][1] == 0 then
-            dataset[i][2] = 0
+            if love.math.random(1,100) <= 85 then
+                dataset[i][2] = 0
+            else
+                dataset[i][2] = 1
+            end
         else
             dataset[i][2] = 1
         end
 
         -- airspeed
-        if dataset[i][1] == 0 then
-            dataset[i][3] = love.math.random(30, 149)
+        if dataset[i][1] == 0 then      -- AGL
+            if love.math.random(1,100) < 90 then
+                dataset[i][3] = 0
+            else
+                dataset[i][3] = 1
+            end
         else
-            dataset[i][3] = love.math.random(135, 199)
+
+            if love.math.random(1,100) <= 75 then
+                dataset[i][3] = 1
+            else
+                dataset[i][3] = 0
+            end
+
         end
 
         -- ** outcomes/states/results **
 
         -- gear.  1 == down
         local rndnum = love.math.random(1,100)
-        if dataset[i][1] == 0 then
-            dataset[i][4] = 1
-        elseif dataset[i][1] <= 3 and rndnum <= 25 then
-            dataset[i][4] = 0
-        elseif dataset[i][1] <= 3 and rndnum > 25 then
-            dataset[i][4] = 1
-        elseif dataset[i][1] <= 6 and rndnum <= 75 then
-            dataset[i][4] = 0
-        elseif dataset[i][1] <= 6 and rndnum > 75 then
-            dataset[i][4] = 1
-        else
-            dataset[i][4] = 0
-        end
-
-        -- ap
-        if dataset[i][1] <= 3 then
-            dataset[i][5] = 0
-        elseif dataset[i][1] <= 6 and love.math.random(1,100) <= 50 then
-            dataset[i][5] = 1
-        else
-            dataset[i][5] = 1
-        end
-
-        -- flaps
-        if dataset[i][1] <= 3 then
-            dataset[i][6] = 2
-        elseif dataset[i][1] <= 5 and love.math.random(1,100) <= 33 then
-            dataset[i][6] = 2
-        elseif dataset[i][1] <= 7 and love.math.random(1,100) <= 75 then
-            dataset[i][6] = 1
-        else
-            dataset[i][6] = 0
-        end
-
-    end
-end
-
-local function getCountOfPositiveSamples(ds)
-    -- ds = dataset
-    local result = 0
-
-    for k, v in pairs(ds) do
-        if ds[k][4] == 1 then
-            result = result + 1
-        end
-    end
-    return result
-end
-
-local function getCountOfNegativeSamples(ds)
-    -- ds = dataset
-    local result = 0
-
-    for k, v in pairs(ds) do
-        if ds[k][4] == 0 then
-            result = result + 1
-        end
-    end
-    return result
-end
-
-local function getCountOfPositiveSamplesForFunction(ds, functionnumber, testnumber)
-    -- for functionnumber, determine how many times gear (testnumber) is down for each category of functionnumber
-    -- testnumber is the thing we're testing for a positive outcome (eg. is gear down means testnumber = 4)
-    local result = {}
-    for i = 1 , #ds do
-        if ds[i][testnumber] == 1 then      -- testnumber == 4 for landing gear
-            -- found a positive case
-            -- get the actual value for this function
-            local val = ds[i][functionnumber]   -- this is the AGL value (e.g 500 feet)
-            if result[val] == nil then
-                result[val] = 1
+        if dataset[i][1] == 0 then  -- agl
+            if love.math.random(1,100) <= 75 then
+                dataset[i][4] = 0
             else
-                result[val] = result[val] + 1
+                dataset[i][4] = 1
+            end
+        else
+            if love.math.random(1,100) <= 75 then
+                dataset[i][4] = 1
+            else
+                dataset[i][4] = 0
             end
         end
+
+        -- -- ap
+        -- if dataset[i][1] <= 3 then
+        --     dataset[i][5] = 0
+        -- elseif dataset[i][1] <= 6 and love.math.random(1,100) <= 50 then
+        --     dataset[i][5] = 1
+        -- else
+        --     dataset[i][5] = 1
+        -- end
+        --
+        -- -- flaps
+        -- if dataset[i][1] <= 3 then
+        --     dataset[i][6] = 2
+        -- elseif dataset[i][1] <= 5 and love.math.random(1,100) <= 33 then
+        --     dataset[i][6] = 2
+        -- elseif dataset[i][1] <= 7 and love.math.random(1,100) <= 75 then
+        --     dataset[i][6] = 1
+        -- else
+        --     dataset[i][6] = 0
+        -- end
+
     end
-    return result
 end
 
-local function getCountOfNegativeSamplesForFunction(ds, functionnumber, testnumber)
-    -- for functionnumber, determine how many times gear (testnumber) is down for each category of functionnumber
-    -- testnumber is the thing we're testing for a positive outcome (eg. is gear down means testnumber = 4)
-    local result = {}
-    for i = 1 , #ds do
-        if ds[i][testnumber] == 0 then      -- testnumber == 4 for landing gear
-            -- found a positive case
-            -- get the actual value for this function
-            local val = ds[i][functionnumber]   -- this is the AGL value (e.g 500 feet)
-            if result[val] == nil then
-                result[val] = 1
-            else
-                result[val] = result[val] + 1
+local function nodeInHistory(history, nodetitle)
+    -- scan the history table for the node title
+    for i = 1 , #history do
+        if history[i] == nodetitle then
+            return true
+        end
+    end
+    return false
+end
+
+function findEmptyBranch(t)
+
+    local root
+    local thisnode = {}
+
+    if t.title == nil then
+        -- there is no tree. Return nil.
+        -- print("alpha")
+        return nil
+    else
+        -- print("bravo")
+        thisnode = cf.deepcopy(t)
+        root = t.title
+        print("Juliet" , root)
+        table.insert(treejourney, thisnode)
+        treejourneypointer = treejourneypointer + 1
+    end
+
+    -- print("charlie")
+    local abort = false
+    repeat
+        -- thisnode could be:
+        --  a leaf (leaf = true)
+        --  a balanced branch (#children == 2)
+        --  an incomplete branch (#children < 2)
+
+        print("delta", thisnode.title)
+        if (thisnode.children == nil or #thisnode.children < 2) and thisnode.leaf == false then
+            print("echo")
+            -- this node is a branch and has too few children. Bingo.
+            abort = true
+            return thisnode
+        elseif thisnode.leaf == true then
+            -- print("hotel")
+            -- both children are in history so travel up the tree or
+            -- this node is a leaf
+            print("Oscar: found a leaf")
+            print("Tree journey:")
+-- print(inspect(treejourney))
+-- error()
+
+            -- move the pointer back by one (to the parent) and then add this navigation backwards to the treejourney history
+            treejourneypointer = treejourneypointer - 1
+            thisnode = treejourney[treejourneypointer]
+            table.insert(treejourney, thisnode)
+            if thisnode.title == root and nodeInHistory(treejourney, thisnode.children[1]) and nodeInHistory(treejourney, thisnode.children[2]) then
+                abort = true
             end
-        end
-    end
-    return result
-end
-
-local function printDataset(ds)
-    print("index", "AGL", "pitch","air s", "gear", "autop", "flaps")
-    for i = 1, #ds do
-        print(i, ds[i][1], ds[i][2], ds[i][3], ds[i][4], ds[i][5], ds[i][6] )
-    end
-end
-
-local function getSupersetOfValuesForFunction(parray, narray, functionnumber)
-    -- return the union of values from positive array and negative array
-    -- for given function number
-
-    -- positive array
-    local result = {}
-    for k, v in pairs(parray[functionnumber]) do
-        if result[k] == nil then
-            result[k] = v
+        elseif thisnode.leaf == false and #thisnode.children >= 2 then
+            -- thisnode is a branch and has at least 2 children
+            -- print("Kilo")
+            if not nodeInHistory(treejourney, thisnode.children[1]) then
+                -- print("foxtrot")
+                thisnode = thisnode.children[1]
+                print("Lima")
+                table.insert(treejourney, thisnode)
+                treejourneypointer = treejourneypointer + 1
+            elseif not nodeInHistory(treejourney, thisnode.children[2]) then
+                -- print("golf")
+                thisnode = thisnode.children[2]
+                print("Mike")
+                table.insert(treejourney, thisnode)
+                treejourneypointer = treejourneypointer + 1
+            else
+                -- both children have been visited. Need to move up the tree
+                print("Papa: moving up the tree")
+                treejourneypointer = treejourneypointer - 1
+                thisnode = treejourney[treejourneypointer]
+                table.insert(treejourney, thisnode)
+                if thisnode.title == root and nodeInHistory(treejourney, thisnode.children[1]) and nodeInHistory(treejourney, thisnode.children[2]) then
+                    -- tree fully traversed and returned back to root
+                    abort = true
+                end
+            end
         else
-            result[k] = result[k] + v
+            print("Error:")
+            print("if condition: " , thisnode.children == nil or #thisnode.children < 2)
+            print("title: " .. thisnode.title)
+            print("children is nil: " , thisnode.children == nil)
+            -- print(#thisnode.children)
+            print("is leaf: " , thisnode.leaf)
+            error()
         end
-    end
-
-    -- negative array
-    for k, v in pairs(narray[functionnumber]) do
-        if result[k] == nil then
-            result[k] = v
-        else
-            result[k] = result[k] + v
-        end
-    end
-    return result
+    until (abort == true)
+    -- print("indigo")
+    return nil      -- effectively a 'fail'
 end
 
-local function getEntropy(posvalue, negvalue)
-    -- posvalue = number of positive instances in the sample
-    -- negative = number of positive instances in the sample
-    -- totalvalue = number of samples
+getDataset1()
 
-    if posvalue == nil or tostring(posvalue) == 'nan' then posvalue = 0 end
-    if negvalue == nil or tostring(negvalue) == 'nan' then negvalue = 0 end
+print("@@@")
 
-    totalvalue = posvalue + negvalue
+newnode = {}
+newnode.title = "AGL"
+newnode.leaf = false
+newnode.children = {}
+emptynode = findEmptyBranch(solutiontree)
+if emptynode == nil then
+    -- tree is empty
+    solutiontree = tr.newtree(newnode.title, newnode.leaf)
+elseif emptynode == 1 then
+    -- tree is complete
+else
+    -- found and empty node
+    solutiontree = tr.insertintotree(solutiontree, emptynode.title, newnode)
+end
+-- print(inspect(solutiontree))
+-- print("$$$")
+-- print(solutiontree.title)
 
-    -- print("psvalue: ".. posvalue, "negvalue: " .. negvalue)
-
-    local posbit, negbit
-    if posvalue > 0 then
-        posbit = ((posvalue/totalvalue) * math.log(posvalue/totalvalue,2))
-    else
-        posbit = 0
-    end
-    if negvalue > 0 then
-        negbit = ((negvalue/totalvalue) * math.log(negvalue/totalvalue,2))
-    else
-        negbit = 0
-    end
-
-    -- print("Posbit: " .. posbit, "Negbit: " .. negbit)
-    -- return -1 * (((posvalue/totalvalue) * math.log(posvalue/totalvalue,2)) + ( (negvalue/totalvalue) * math.log(negvalue/totalvalue,2) ))
-    return -1 * (posbit + negbit)
+newnode = {}
+newnode.title = "Pitch"
+newnode.leaf = false
+newnode.children = {}
+emptynode = findEmptyBranch(solutiontree)
+if emptynode == nil then
+    -- tree is empty
+    solutiontree = tr.newtree(newnode.title, newnode.leaf)
+elseif emptynode == 1 then
+    -- tree is complete
+else
+    -- found and empty node
+    solutiontree = tr.insertintotree(solutiontree, emptynode.title, newnode)
 end
 
--- ************************************************************************************************************************************
-
-getDataset()
-
-printDataset(dataset)
-
--- should gear be down (1)?
-numofpositivesamples = getCountOfPositiveSamples(dataset, 1, 1)   -- gear == 1
-numofnegativesamples = getCountOfNegativeSamples(dataset, 1, 1)
-numofsamples = numofpositivesamples + numofnegativesamples
-
-entropy = getEntropy(numofpositivesamples, numofnegativesamples)
-
-print("Total entropy is " .. cf.round(entropy,4))  -- values close to 100 = impure
-print()
-
--- determine information gain
-
-for i = 1, NUMBEROFFUNCTIONS do
-
--- for function x
--- get all the positives
-positiveSamplesForFunction = {}
-positiveSamplesForFunction[1] = getCountOfPositiveSamplesForFunction(dataset, 1, 4)        -- 1 == AGL. 4 == gear
-
-print"ooo - positive samples"
-print("value - count")
-for e,r in pairs(positiveSamplesForFunction[1]) do
-    print(e,r)
+newnode = {}
+newnode.title = "Airspeed"
+newnode.leaf = false
+newnode.children = {}
+emptynode = findEmptyBranch(solutiontree)
+if emptynode == nil then
+    -- tree is empty
+    solutiontree = tr.newtree(newnode.title, newnode.leaf)
+elseif emptynode == 1 then
+    -- tree is complete
+else
+    -- found and empty node
+    solutiontree = tr.insertintotree(solutiontree, emptynode.title, newnode)
 end
 
--- get all the negatives
-negativeSamplesForFunction = {}
-negativeSamplesForFunction[1] = getCountOfNegativeSamplesForFunction(dataset, 1, 4)
-
-print"*** - negative samples"
-print("value - count")
-for e,r in pairs(negativeSamplesForFunction[1]) do
-    print(e,r)
+newnode = {}
+newnode.title = "Landing gear up"
+newnode.leaf = true
+newnode.children = {}
+emptynode = findEmptyBranch(solutiontree)
+if emptynode == nil then
+    -- tree is empty
+    solutiontree = tr.newtree(newnode.title, newnode.leaf)
+elseif emptynode == 1 then
+    -- tree is complete
+else
+    solutiontree = tr.insertintotree(solutiontree, emptynode.title, newnode)
 end
 
--- determine the superset of possible values for function x
+
+
+newnode = {}
+newnode.title = "Oxygen"
+newnode.leaf = true
+newnode.children = {}
+emptynode = findEmptyBranch(solutiontree)
+if emptynode == nil then
+    -- tree is empty
+    solutiontree = tr.newtree(newnode.title, newnode.leaf)
+elseif emptynode == 1 then
+    -- tree is complete
+else
+    solutiontree = tr.insertintotree(solutiontree, emptynode.title, newnode)
+end
+
+
+
+print("***")
+newnode = {}
+newnode.title = "Fuel"
+newnode.leaf = false
+newnode.children = {}
+emptynode = findEmptyBranch(solutiontree)
+if emptynode == nil then
+    -- tree is empty
+    solutiontree = tr.newtree(newnode.title, newnode.leaf)
+elseif emptynode == 1 then
+    -- tree is complete
+else
+    solutiontree = tr.insertintotree(solutiontree, emptynode.title, newnode)
+end
+
 print("---")
-superset = {}
-superset = getSupersetOfValuesForFunction(positiveSamplesForFunction,negativeSamplesForFunction, 1)
-
-print("superset of values for function is:")
-for k,v in pairs(superset) do
-    print(k, v)
-end
-
+print(inspect(solutiontree))
 print("+++")
-print("Entropy for each value:")
--- get the entropy for each value in the function
-ent = {}
-for k, v in pairs(superset) do
-    -- print(k, positiveSamplesForFunction[1][k], negativeSamplesForFunction[1][k])
-    ent[k] = getEntropy(positiveSamplesForFunction[1][k], negativeSamplesForFunction[1][k])
-    print(k, ent[k])
-
-end
-print("~~~")
-
--- finally - information gain
-local mysum = 0
-for k,v in pairs(superset) do
-    mysum = mysum +  (v / NUMBEROFDATAPOINTS) * ent[k]
-end
-local gain = {}
-gain[1] = entropy - mysum
-print("Gain for this function is: " .. gain[1])
+print(inspect(treejourney))

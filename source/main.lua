@@ -1,6 +1,7 @@
 inspect = require 'lib.inspect'
 tr = require 'tree'
 cf = require 'lib.commonfunctions'
+ent = require 'entropyfunctions'
 
 dataset = {}
 rawdata = {}
@@ -11,6 +12,13 @@ treejourney = {}
 treejourneypointer = 0      -- this points to where in the treejourney the current navigation is. Treejourney is a flat array so this is between 1 and #treejourney inclusive
 
 NUMBEROFDATAPOINTS = 50
+
+local function printDataset(ds)
+    print("index", "AGL", "pitch","air s", "gear", "autop", "flaps")
+    for i = 1, #ds do
+        print(i, ds[i][1], ds[i][2], ds[i][3], ds[i][4], ds[i][5], ds[i][6] )
+    end
+end
 
 local function getDataset1()
     for i = 1, 2 do
@@ -340,6 +348,18 @@ local function ConstructTree2()
     solutiontree = tr.insertintotree(solutiontree, "3", newnode)
 end
 
+function ConstructTree3()
+    -- real tree built in response to data
+    local totalentropy = ent.getTotalEntropy(dataset)
+    print("Entropy = " .. totalentropy)      -- not sure how this is useful
+
+    -- determine the best feature
+    bestfeature = ent.getBestFeature(dataset, totalentropy)
+
+    print("Best feature is " .. tostring(bestfeature))
+
+end
+
 local treeresult        -- making this a global resolves the problem of recursive subcalls having local values that get lost
 local function getDecisionFromTree(t, inputtable)
 
@@ -351,15 +371,15 @@ local function getDecisionFromTree(t, inputtable)
     else
         -- not yet found a leaf
         local thisnodefeature = tonumber(thisnode.title)
-print("Tree node is for feature " .. thisnodefeature)
-print("The raw data for that feature is " .. inputtable[thisnodefeature])
+        -- print("Tree node is for feature " .. thisnodefeature)
+        -- print("The raw data for that feature is " .. inputtable[thisnodefeature])
         if inputtable[thisnodefeature] == 0 then
             -- navigate down the first/left child
-print("Travelling down the left child")
+            -- print("Travelling down the left child")
             getDecisionFromTree(thisnode.children[1], inputtable)
         elseif inputtable[thisnodefeature] == 1 then
             -- navigate down the second/right child
-print("Travelling down the right child")
+            -- print("Travelling down the right child")
             getDecisionFromTree(thisnode.children[2], inputtable)
         else
             error()
@@ -370,11 +390,13 @@ end
 getDataset()
 -- getDataset1()
 
+
+printDataset(dataset)
 print("@@@")
 
-ConstructTree1()
-ConstructTree2()
-
+-- ConstructTree1()
+-- ConstructTree2()
+ConstructTree3()
 
 print("---")
 print(inspect(solutiontree))
@@ -382,8 +404,7 @@ print(inspect(solutiontree))
 -- print(inspect(treejourney))
 
 -- lets query the tree and see if we can get a response/decision returned
-
 print("===")
-print(inspect(dataset[1]))
-getDecisionFromTree(solutiontree, dataset[1])
-print(treeresult)
+-- print(inspect(dataset[1]))
+-- getDecisionFromTree(solutiontree, dataset[1])        -- sets a global call 'treeresult'
+-- print(treeresult)

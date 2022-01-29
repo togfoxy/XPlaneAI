@@ -155,8 +155,8 @@ function findEmptyBranch(t)
             -- this node is a leaf
             print("Oscar: found a leaf")
             print("Tree journey:")
--- print(inspect(treejourney))
--- error()
+            -- print(inspect(treejourney))
+            -- error()
 
             -- move the pointer back by one (to the parent) and then add this navigation backwards to the treejourney history
             treejourneypointer = treejourneypointer - 1
@@ -205,106 +205,185 @@ function findEmptyBranch(t)
     return nil      -- effectively a 'fail'
 end
 
-getDataset1()
+local function ConstructTree1()
+    -- this is a badly formed and incorrect true used for testing
+    newnode = {}
+    newnode.title = "AGL"
+    newnode.leaf = false
+    newnode.children = {}
+    emptynode = findEmptyBranch(solutiontree)
+    if emptynode == nil then
+        -- tree is empty
+        solutiontree = tr.newtree(newnode.title, newnode.leaf)
+    elseif emptynode == 1 then
+        -- tree is complete
+    else
+        -- found and empty node
+        solutiontree = tr.insertintotree(solutiontree, emptynode.title, newnode)
+    end
+
+    newnode = {}
+    newnode.title = "Pitch"
+    newnode.leaf = false
+    newnode.children = {}
+    emptynode = findEmptyBranch(solutiontree)
+    if emptynode == nil then
+        -- tree is empty
+        solutiontree = tr.newtree(newnode.title, newnode.leaf)
+    elseif emptynode == 1 then
+        -- tree is complete
+    else
+        -- found and empty node
+        solutiontree = tr.insertintotree(solutiontree, emptynode.title, newnode)
+    end
+
+    newnode = {}
+    newnode.title = "Airspeed"
+    newnode.leaf = false
+    newnode.children = {}
+    emptynode = findEmptyBranch(solutiontree)
+    if emptynode == nil then
+        -- tree is empty
+        solutiontree = tr.newtree(newnode.title, newnode.leaf)
+    elseif emptynode == 1 then
+        -- tree is complete
+    else
+        -- found and empty node
+        solutiontree = tr.insertintotree(solutiontree, emptynode.title, newnode)
+    end
+
+    newnode = {}
+    newnode.title = "Landing gear up"
+    newnode.leaf = true
+    newnode.children = {}
+    emptynode = findEmptyBranch(solutiontree)
+    if emptynode == nil then
+        -- tree is empty
+        solutiontree = tr.newtree(newnode.title, newnode.leaf)
+    elseif emptynode == 1 then
+        -- tree is complete
+    else
+        solutiontree = tr.insertintotree(solutiontree, emptynode.title, newnode)
+    end
+
+    newnode = {}
+    newnode.title = "Fuel"
+    newnode.leaf = false
+    newnode.children = {}
+    emptynode = findEmptyBranch(solutiontree)
+    if emptynode == nil then
+        -- tree is empty
+        solutiontree = tr.newtree(newnode.title, newnode.leaf)
+    elseif emptynode == 1 then
+        -- tree is complete
+    else
+        solutiontree = tr.insertintotree(solutiontree, emptynode.title, newnode)
+    end
+
+
+    newnode = {}
+    newnode.title = "Landing gear down"
+    newnode.leaf = true
+    newnode.children = {}
+    emptynode = findEmptyBranch(solutiontree)
+    if emptynode == nil then
+        -- tree is empty
+        solutiontree = tr.newtree(newnode.title, newnode.leaf)
+    elseif emptynode == 1 then
+        -- tree is complete
+    else
+        solutiontree = tr.insertintotree(solutiontree, emptynode.title, newnode)
+    end
+end
+
+local function ConstructTree2()
+    newnode = {}
+    newnode.title = "1" -- AGL feature
+    newnode.leaf = false
+    newnode.children = {}
+    solutiontree = tr.newtree(newnode.title, newnode.leaf)
+
+    newnode = {}
+    newnode.title = "2"     -- pitch feature
+    newnode.leaf = false
+    newnode.children = {}
+    solutiontree = tr.insertintotree(solutiontree, "1", newnode)
+
+    newnode = {}
+    newnode.title = "3"     -- airspeed feature
+    newnode.leaf = false
+    newnode.children = {}
+    solutiontree = tr.insertintotree(solutiontree, "1", newnode)
+
+    newnode = {}
+    newnode.title = "Landing gear up"
+    newnode.leaf = true
+    newnode.children = {}
+    solutiontree = tr.insertintotree(solutiontree, "2", newnode)
+
+    newnode = {}
+    newnode.title = "Landing gear down"
+    newnode.leaf = true
+    newnode.children = {}
+    solutiontree = tr.insertintotree(solutiontree, "2", newnode)
+
+    newnode = {}
+    newnode.title = "Landing gear up"
+    newnode.leaf = true
+    newnode.children = {}
+    solutiontree = tr.insertintotree(solutiontree, "3", newnode)
+
+    newnode = {}
+    newnode.title = "Landing gear down"
+    newnode.leaf = true
+    newnode.children = {}
+    solutiontree = tr.insertintotree(solutiontree, "3", newnode)
+end
+
+local treeresult        -- making this a global resolves the problem of recursive subcalls having local values that get lost
+local function getDecisionFromTree(t, inputtable)
+
+    local thisnode = cf.deepcopy(t)
+    if thisnode.leaf then
+        -- a decision has been made
+        treeresult = thisnode.title
+        return
+    else
+        -- not yet found a leaf
+        local thisnodefeature = tonumber(thisnode.title)
+print("Tree node is for feature " .. thisnodefeature)
+print("The raw data for that feature is " .. inputtable[thisnodefeature])
+        if inputtable[thisnodefeature] == 0 then
+            -- navigate down the first/left child
+print("Travelling down the left child")
+            getDecisionFromTree(thisnode.children[1], inputtable)
+        elseif inputtable[thisnodefeature] == 1 then
+            -- navigate down the second/right child
+print("Travelling down the right child")
+            getDecisionFromTree(thisnode.children[2], inputtable)
+        else
+            error()
+        end
+    end
+end
+
+getDataset()
+-- getDataset1()
 
 print("@@@")
 
-newnode = {}
-newnode.title = "AGL"
-newnode.leaf = false
-newnode.children = {}
-emptynode = findEmptyBranch(solutiontree)
-if emptynode == nil then
-    -- tree is empty
-    solutiontree = tr.newtree(newnode.title, newnode.leaf)
-elseif emptynode == 1 then
-    -- tree is complete
-else
-    -- found and empty node
-    solutiontree = tr.insertintotree(solutiontree, emptynode.title, newnode)
-end
--- print(inspect(solutiontree))
--- print("$$$")
--- print(solutiontree.title)
+ConstructTree1()
+ConstructTree2()
 
-newnode = {}
-newnode.title = "Pitch"
-newnode.leaf = false
-newnode.children = {}
-emptynode = findEmptyBranch(solutiontree)
-if emptynode == nil then
-    -- tree is empty
-    solutiontree = tr.newtree(newnode.title, newnode.leaf)
-elseif emptynode == 1 then
-    -- tree is complete
-else
-    -- found and empty node
-    solutiontree = tr.insertintotree(solutiontree, emptynode.title, newnode)
-end
-
-newnode = {}
-newnode.title = "Airspeed"
-newnode.leaf = false
-newnode.children = {}
-emptynode = findEmptyBranch(solutiontree)
-if emptynode == nil then
-    -- tree is empty
-    solutiontree = tr.newtree(newnode.title, newnode.leaf)
-elseif emptynode == 1 then
-    -- tree is complete
-else
-    -- found and empty node
-    solutiontree = tr.insertintotree(solutiontree, emptynode.title, newnode)
-end
-
-newnode = {}
-newnode.title = "Landing gear up"
-newnode.leaf = true
-newnode.children = {}
-emptynode = findEmptyBranch(solutiontree)
-if emptynode == nil then
-    -- tree is empty
-    solutiontree = tr.newtree(newnode.title, newnode.leaf)
-elseif emptynode == 1 then
-    -- tree is complete
-else
-    solutiontree = tr.insertintotree(solutiontree, emptynode.title, newnode)
-end
-
-
-
-newnode = {}
-newnode.title = "Oxygen"
-newnode.leaf = true
-newnode.children = {}
-emptynode = findEmptyBranch(solutiontree)
-if emptynode == nil then
-    -- tree is empty
-    solutiontree = tr.newtree(newnode.title, newnode.leaf)
-elseif emptynode == 1 then
-    -- tree is complete
-else
-    solutiontree = tr.insertintotree(solutiontree, emptynode.title, newnode)
-end
-
-
-
-print("***")
-newnode = {}
-newnode.title = "Fuel"
-newnode.leaf = false
-newnode.children = {}
-emptynode = findEmptyBranch(solutiontree)
-if emptynode == nil then
-    -- tree is empty
-    solutiontree = tr.newtree(newnode.title, newnode.leaf)
-elseif emptynode == 1 then
-    -- tree is complete
-else
-    solutiontree = tr.insertintotree(solutiontree, emptynode.title, newnode)
-end
 
 print("---")
 print(inspect(solutiontree))
-print("+++")
-print(inspect(treejourney))
+-- print("+++")
+-- print(inspect(treejourney))
+
+-- lets query the tree and see if we can get a response/decision returned
+
+print("===")
+print(inspect(dataset[1]))
+getDecisionFromTree(solutiontree, dataset[1])
+print(treeresult)

@@ -2,7 +2,7 @@ local tree = {}
 
 function tree.newtree(string,val)
     -- title is the name of the node
-    -- value is some threshold values
+    -- value is some threshold value
     -- children are ... well ... children
     return {title = string, leaf = val, children = {}}
 end
